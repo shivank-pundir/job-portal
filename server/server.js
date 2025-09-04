@@ -1,36 +1,32 @@
+// server/server.js
 import './config/instrument.js'
 import express from 'express'
 import cors from 'cors'
 import 'dotenv/config'
-import connectDB from './config/db.js';
-import * as Sentry from '@sentry/node';
-import { clerkWebhook } from './controllers/webhook.js';
+import connectDB from './config/db.js'
+import * as Sentry from '@sentry/node'
+import { clerkWebhook } from './controllers/webhook.js'
 
-//Initialize app
-const app = express();
+const app = express()
 
-//connect to database
+// Connect DB
 await connectDB()
 
-//Middlewares
-app.use(cors());
-app.use(express.json());
+// CORS (adjust origins if you want to restrict)
+app.use(cors())
 
-app.get('/', (req,res) => 
-    res.send("Api working")
-);
+// ✅ Use raw body ONLY for Clerk webhook
+app.post('/webhooks', express.raw({ type: '*/*' }), clerkWebhook)
 
-app.get('/debug-sentry', function mainHandler(req, res) {
-    throw new Error("my first sentry error");
-});
+// ✅ JSON parser for everything else (must be AFTER the webhook route)
+app.use(express.json())
 
-app.post('/webhooks', clerkWebhook)
+app.get('/', (req, res) => res.send('Api working'))
 
-//port 
+// Sentry test route (optional)
+app.get('/debug-sentry', () => { throw new Error('my first sentry error') })
+
 const PORT = process.env.PORT || 5000
+Sentry.setupExpressErrorHandler(app)
 
-Sentry.setupExpressErrorHandler(app);
-
-app.listen(PORT, ()=> {
-    console.log(`App is listening on port ${PORT}`);
-})
+app.listen(PORT, () => console.log(`App is listening on port ${PORT}`))

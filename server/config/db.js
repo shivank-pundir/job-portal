@@ -1,10 +1,11 @@
+// server/config/db.js
 import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.ATLASDB_URL, {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
     });
     console.log("✅ Database connected");
   } catch (err) {
@@ -14,4 +15,3 @@ const connectDB = async () => {
 };
 
 export default connectDB;
- 
