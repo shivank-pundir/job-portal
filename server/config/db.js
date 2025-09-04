@@ -1,9 +1,17 @@
 import mongoose from "mongoose";
 
-const connectDB = async() => {
-    mongoose.connection.on('connected', () => console.log("Database connected"))
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.ATLASDB_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log("✅ Database connected");
+  } catch (err) {
+    console.error("❌ Database connection failed:", err.message);
+    process.exit(1);
+  }
+};
 
-    await mongoose.connect(`${process.env.ATLASDB_URL}/job-portal`)
-}
-
-export default connectDB
+export default connectDB;
+ 
