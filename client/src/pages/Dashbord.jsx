@@ -1,9 +1,26 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
+import { useContext } from "react";
+import { AppContext } from "../context/AppContext";
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const {companyData,setCompanyData, setCompanyToken} = useContext(AppContext)
+
+  const logout = async() => {
+    setCompanyToken(null)
+    localStorage.removeItem('companyToken')
+    setCompanyData(null)
+    navigate('/')
+
+  }
+  useEffect(() => {
+      if(companyData){
+        navigate('/dashboard/manage-job')
+      }
+  },[companyData])
 
   return (
     <div className="min-h-screen">
@@ -16,23 +33,24 @@ const Dashboard = () => {
             src={assets.logo}
             alt="logo"
           />
-
-          <div className="flex items-center gap-3">
-            <p className="max-sm:hidden">Welcome! Shivank</p>
+         
+               <div className="flex items-center gap-3">
+            <p className="max-sm:hidden">Welcome! {companyData.name}</p>
 
             <div className="relative group ml-2 mr-4">
               <img
                 className="w-8 rounded-full cursor-pointer"
-                src={assets.company_icon}
+                src={companyData.image}
                 alt="profile"
               />
               <div className="absolute hidden group-hover:block top-0 right-4 z-10 text-black rounded pt-12">
                 <ul className="list-none border border-gray-200 bg-gray-50 m-0 p-2 rounded-md text-sm">
-                  <li className="px-2 py-1 cursor-pointer pr-5">Logout</li>
+                  <li onClick={logout} className="px-2 py-1 cursor-pointer pr-5">Logout</li>
                 </ul>
               </div>
             </div>
           </div>
+         
         </div>
       </div>
 
@@ -44,7 +62,7 @@ const Dashboard = () => {
             <NavLink
               to="/dashboard/add-job"
                className={({ isActive }) =>
-                `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-blue-200 ${
+                `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-gray-200 ${
                   isActive ? "bg-blue-500 text-white rounded" : ""
                 }`
               }
@@ -56,7 +74,7 @@ const Dashboard = () => {
             <NavLink
               to="/dashboard/manage-job"
                className={({ isActive }) =>
-                `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-blue-200 ${
+                `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-gray-200 ${
                   isActive ? "bg-blue-500 text-white rounded" : ""
                 }`
               }
@@ -68,7 +86,7 @@ const Dashboard = () => {
             <NavLink
               to="/dashboard/view-application"
              className={({ isActive }) =>
-                `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-blue-200 ${
+                `flex items-center p-3 sm:px-6 gap-2 w-full hover:bg-gray-200 ${
                   isActive ? "bg-blue-500 text-white rounded" : ""
                 }`
               }

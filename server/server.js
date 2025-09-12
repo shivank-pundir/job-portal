@@ -1,32 +1,45 @@
 // server/server.js
-import './config/instrument.js'
-import express from 'express'
-import cors from 'cors'
-import 'dotenv/config'
-import connectDB from './config/db.js'
-import * as Sentry from '@sentry/node'
-import { clerkWebhook } from './controllers/webhook.js'
+import './config/instrument.js';
+import express from 'express';
+import cors from 'cors';
+import 'dotenv/config';
+import connectDB from './config/db.js';
+import * as Sentry from '@sentry/node';
+import { clerkWebhook } from './controllers/webhook.js';
+import companyRoutes from './routes/companyRouter.js';  
+import connectCloudinary from './config/cloudinary.js';
+import jobRouters from './routes/jobRoutes.js';
+import userRouters from './routes/userRouters.js';
+import { clerkMiddleware } from '@clerk/express'; // ✅ only need this
 
-const app = express()
+const app = express();
 
-// Connect DB
-await connectDB()
+// connect DB + Cloudinary
+await connectDB();
+await connectCloudinary();
 
-// CORS (adjust origins if you want to restrict)
-app.use(cors())
+app.use(cors());
 
-// ✅ Use raw body ONLY for Clerk webhook
-app.post('/webhooks', express.raw({ type: '*/*' }), clerkWebhook)
+// ⚠️ Webhooks must be BEFORE JSON parsing
+app.post('/webhooks', express.raw({ type: '*/*' }), clerkWebhook);
 
-// ✅ JSON parser for everything else (must be AFTER the webhook route)
-app.use(express.json())
+// parse JSON and form-data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => res.send('Api working'))
+// Clerk middleware for auth context
+app.use(clerkMiddleware());
 
-// Sentry test route (optional)
-app.get('/debug-sentry', () => { throw new Error('my first sentry error') })
+// register routes
+app.use('/api/company', companyRoutes);
+app.use('/api/jobs', jobRouters);
+app.use('/api/users', userRouters);
 
-const PORT = process.env.PORT || 5000
-Sentry.setupExpressErrorHandler(app)
+// test routes
+app.get('/', (req, res) => res.send('Api working'));
+app.get('/debug-sentry', () => { throw new Error('my first sentry error'); });
 
-app.listen(PORT, () => console.log(`App is listening on port ${PORT}`))
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});

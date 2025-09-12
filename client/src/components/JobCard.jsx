@@ -7,7 +7,15 @@ const JobCard = ({ job }) => {
   return (
     <div className=" mt-5 border border-gray-200 rounded-lg shadow-md p-4 bg-white hover:shadow-lg transition-shadow duration-300">
       <div className='flex justify-between  items-center'>
-        <img className='h-6' src={assets.company_icon} alt="" />
+<img
+  className="h-6"
+  src={
+    typeof job.companyId === "object"
+      ? job.companyId.image   // use image, not img
+      : assets.company_icon   // fallback if it's only an ID
+  }
+  alt="Company Logo"
+/>
       </div>
       <h4 className='font-medium text-xl'>{job.title}</h4>
       <div className='mt-2 flex items-center gap-3 text-xs'>
