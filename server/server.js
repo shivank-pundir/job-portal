@@ -10,34 +10,65 @@ import companyRoutes from './routes/companyRouter.js';
 import connectCloudinary from './config/cloudinary.js';
 import jobRouters from './routes/jobRoutes.js';
 import userRouters from './routes/userRouters.js';
-import { clerkMiddleware } from '@clerk/express'; // ✅ only need this
+import { clerkMiddleware } from '@clerk/express';
 
 const app = express();
 
-// connect DB + Cloudinary
+// Connect DB + Cloudinary
 await connectDB();
 await connectCloudinary();
 
-app.use(cors());
+// CORS configuration
+app.use(cors({
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:3000',
+    'https://your-frontend-domain.com'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  optionsSuccessStatus: 200
+}));
 
-// ⚠️ Webhooks must be BEFORE JSON parsing
+// Webhooks must be BEFORE JSON parsing
 app.post('/webhooks', express.raw({ type: '*/*' }), clerkWebhook);
 
-// parse JSON and form-data
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Parse JSON and form-data
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Clerk middleware for auth context
 app.use(clerkMiddleware());
 
-// register routes
+// Debugging middleware
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  next();
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('JSON parsing error:', err.message);
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Invalid JSON' });
+  } 
+  next();
+});
+
+// Register routes
 app.use('/api/company', companyRoutes);
 app.use('/api/jobs', jobRouters);
 app.use('/api/users', userRouters);
 
-// test routes
+// Basic routes
 app.get('/', (req, res) => res.send('Api working'));
-app.get('/debug-sentry', () => { throw new Error('my first sentry error'); });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -10,7 +10,8 @@ import AddJob from './pages/AddJob';
 import ViewApplication from './pages/ViewApplication';
 import ManageJob from './pages/ManageJob';
 import 'quill/dist/quill.snow.css'
-  import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
+// import UserDebug from './components/UserDebug'; // Comment out this import
 
 
 const App = () => {
@@ -18,7 +19,7 @@ const App = () => {
 
   return (
     <div>
-  
+      {/* <UserDebug /> */} {/* Comment out or remove this line */}
       {showRecrutierLogin && <RecuiterLogin />}
       <ToastContainer />
 
