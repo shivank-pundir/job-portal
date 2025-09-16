@@ -17,44 +17,55 @@ const Applications = () => {
 
   const { backendUrl, userData, userDataApplications, fetchUserData } =
     useContext(AppContext);
-
-  const updateResume = async () => {
-    try {
-      if (!resume) {
-        toast.error("Please select a resume first");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("resume", resume);
-
-      const token = await getToken();
-
-      const { data } = await axios.post(
-        `${backendUrl}/api/users/resume`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
+    const updateResume = async () => {
+      try {
+        if (!resume) {
+          toast.error("Please select a resume first");
+          return;
         }
-      );
-
-      if (data.success) {
-        toast.success(data.message || "Resume updated successfully!");
-        await fetchUserData();
-      } else {
-        toast.error(data.message || "Something went wrong");
+    
+        const formData = new FormData();
+        formData.append("resume", resume);
+        const token = await getToken();
+        if (!token) {
+          toast.error('Not authenticated');
+          return;
+        }
+        console.log("[updateResume] token present?", !!token, "file?", !!resume, resume?.name);
+        if (token) {
+          console.log("[updateResume] token (masked):", token.slice(0, 16) + '...');
+        } else {
+          console.warn("[updateResume] No token returned from Clerk getToken()");
+        }
+    
+        const { data, status } = await axios.post(
+          `${backendUrl}/api/users/resume`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+            validateStatus: () => true, // let us see non-2xx responses
+          }
+        );
+    
+        console.log("[updateResume] status:", status, "data:", data);
+    
+        if (data?.success) {
+          toast.success(data.message || "Resume updated successfully!");
+          await fetchUserData();
+        } else {
+          toast.error(data?.message || `Resume update failed (${status})`);
+        }
+      } catch (error) {
+        console.error("Resume update error:", error?.response?.data || error.message);
+        toast.error(error?.response?.data?.message || error.message || "Failed to update resume");
+      } finally {
+        setIsEdit(false);
+        setResume(null);
       }
-    } catch (error) {
-      console.error("Resume update error:", error);
-      toast.error(error.message || "Failed to update resume");
-    } finally {
-      setIsEdit(false);
-      setResume(null);
-    }
-  };
+    };
 
   return (
     <>

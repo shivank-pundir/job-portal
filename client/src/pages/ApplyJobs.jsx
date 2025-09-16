@@ -10,6 +10,7 @@ import JobCard from "../components/JobCard";
 import Footer from "../components/Footer";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
+import { useAuth } from "@clerk/clerk-react";
 
 
 
@@ -19,15 +20,45 @@ const ApplyJobs = () => {
   const [jobdata, setJobdata] = useState(null);
   const [moreJobs, setMoreJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isApplying, setIsApplying] = useState(false);
   const {backendUrl, jobs, userData, userDataApplications} = useContext(AppContext)
+  const { getToken } = useAuth();
 
   const applyHandler = async() => {
+    if (!jobdata || !jobdata._id) {
+      return toast.error('Job not loaded yet. Please wait.');
+    }
     if(!userData){
       return toast.error('Login to apply for a job')
     }
     if(!userData.resume){
       navigate('/application')
       return toast.error('Upload resume to apply')
+    }
+    try {
+      if (isApplying) return;
+      setIsApplying(true);
+      const token = await getToken();
+      if (!token) {
+        toast.error('Not authenticated');
+        return;
+      }
+
+      const { data } = await axios.post(
+        `${backendUrl}/api/users/apply`,
+        { jobId: jobdata._id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (data?.success) {
+        toast.success('Applied successfully');
+      } else {
+        toast.error(data?.message || 'Failed to apply');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message || 'Failed to apply');
+    } finally {
+      setIsApplying(false);
     }
   }
 

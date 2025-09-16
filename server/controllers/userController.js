@@ -1,3 +1,4 @@
+
 import { compare } from "bcrypt";
 import JobApplication from "../models/jobApplication.js";
 import User from "../models/user.js";
@@ -114,24 +115,27 @@ export const syncUserFromClerk = async (req, res) => {
 // Apply for a job
 export const applyForJob = async (req, res) => {
   try {
-    const { userId: clerkId } = req.auth();
+    const { userId } = req.auth();
     const { jobId } = req.body;
 
-    const existingApplication = await JobApplication.findOne({
-      clerkId,
-      jobId,
-    });
+    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+    if (!jobId) return res.status(400).json({ success: false, message: "jobId is required" });
 
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ success: false, message: "Job not found" });
+
+    const existingApplication = await JobApplication.findOne({ userId, jobId });
     if (existingApplication) {
       return res.status(400).json({ success: false, message: "Already applied" });
     }
 
-    const jobApplication = await JobApplication.create({
-      clerkId,
+    await JobApplication.create({
+      userId,
       jobId,
+      companyId: job.companyId,
+      status: "pending",
+      date: Date.now(),
     });
-
-    await jobApplication.save();
 
     res.status(200).json({ success: true, message: "Job applied successfully" });
   } catch (error) {
@@ -142,9 +146,11 @@ export const applyForJob = async (req, res) => {
 // Get user job applications
 export const getUserJobApplication = async (req, res) => {
   try {
-    const { userId: clerkId } = req.auth();
+    const { userId } = req.auth();
 
-    const applications = await JobApplication.find({ clerkId })
+    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const applications = await JobApplication.find({ userId })
       .populate("companyId", "name email image")
       .populate("jobId", "title description location category level salary")
       .exec();
