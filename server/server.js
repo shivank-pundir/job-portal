@@ -23,7 +23,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:3000',
-    'https://your-frontend-domain.com'
+    'https://job-portal-client-alpha-one.vercel.app' 
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -36,6 +36,7 @@ app.use(cors({
   ],
   optionsSuccessStatus: 200
 }));
+
 
 // Webhooks must be BEFORE JSON parsing
 app.post('/webhooks', express.raw({ type: '*/*' }), clerkWebhook);
