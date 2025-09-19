@@ -17,55 +17,71 @@ const Applications = () => {
 
   const { backendUrl, userData, userDataApplications, fetchUserData } =
     useContext(AppContext);
-    const updateResume = async () => {
-      try {
-        if (!resume) {
-          toast.error("Please select a resume first");
-          return;
-        }
-    
-        const formData = new FormData();
-        formData.append("resume", resume);
-        const token = await getToken();
-        if (!token) {
-          toast.error('Not authenticated');
-          return;
-        }
-        console.log("[updateResume] token present?", !!token, "file?", !!resume, resume?.name);
-        if (token) {
-          console.log("[updateResume] token (masked):", token.slice(0, 16) + '...');
-        } else {
-          console.warn("[updateResume] No token returned from Clerk getToken()");
-        }
-    
-        const { data, status } = await axios.post(
-          `${backendUrl}/api/users/resume`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-            validateStatus: () => true, // let us see non-2xx responses
-          }
-        );
-    
-        console.log("[updateResume] status:", status, "data:", data);
-    
-        if (data?.success) {
-          toast.success(data.message || "Resume updated successfully!");
-          await fetchUserData();
-        } else {
-          toast.error(data?.message || `Resume update failed (${status})`);
-        }
-      } catch (error) {
-        console.error("Resume update error:", error?.response?.data || error.message);
-        toast.error(error?.response?.data?.message || error.message || "Failed to update resume");
-      } finally {
-        setIsEdit(false);
-        setResume(null);
+  const updateResume = async () => {
+    try {
+      if (!resume) {
+        toast.error("Please select a resume first");
+        return;
       }
-    };
+
+      const formData = new FormData();
+      formData.append("resume", resume);
+      const token = await getToken();
+      if (!token) {
+        toast.error("Not authenticated");
+        return;
+      }
+      console.log(
+        "[updateResume] token present?",
+        !!token,
+        "file?",
+        !!resume,
+        resume?.name
+      );
+      if (token) {
+        console.log(
+          "[updateResume] token (masked):",
+          token.slice(0, 16) + "..."
+        );
+      } else {
+        console.warn("[updateResume] No token returned from Clerk getToken()");
+      }
+
+      const { data, status } = await axios.post(
+        `${backendUrl}/api/users/resume`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          validateStatus: () => true, // let us see non-2xx responses
+        }
+      );
+
+      console.log("[updateResume] status:", status, "data:", data);
+
+      if (data?.success) {
+        toast.success(data.message || "Resume updated successfully!");
+        await fetchUserData();
+      } else {
+        toast.error(data?.message || `Resume update failed (${status})`);
+      }
+    } catch (error) {
+      console.error(
+        "Resume update error:",
+        error?.response?.data || error.message
+      );
+      toast.error(
+        error?.response?.data?.message ||
+          error.message ||
+          "Failed to update resume"
+      );
+    } finally {
+      setIsEdit(false);
+      setResume(null);
+    }
+  };
 
   return (
     <>
@@ -74,7 +90,7 @@ const Applications = () => {
         <h2 className="text-xl font-semibold">Your Resume</h2>
 
         <div className="flex gap-2 mb-6 mt-3">
-          {(isEdit || (userData && userData.resume === "")) ? (
+          {isEdit || (userData && userData.resume === "") ? (
             <>
               <label className="flex items-center" htmlFor="resumeUpload">
                 <p className="bg-blue-100 text-blue-500 rounded px-4 py-2">
@@ -126,16 +142,20 @@ const Applications = () => {
             </tr>
           </thead>
           <tbody>
-            {jobsApplied.map((job, idx) => (
+            {userDataApplications.map((job, idx) => (
               <tr key={idx}>
                 <td className="py-2 px-4 flex items-center gap-2">
-                  <img className="w-8 h-8" src={job.logo} alt="" />
-                  {job.company}
+                  <img className="w-8 h-8" src={job.companyId.image} alt="" />
+                  {job.companyId.name}
                 </td>
-                <td className="px-4 py-3">{job.title}</td>
-                <td className="px-4 py-4">{job.location}</td>
+                <td className="px-4 py-3">{job.jobId.title}</td>
+                <td className="px-4 py-4">{job.jobId.location}</td>
                 <td className="px-4 py-4">
-                  {moment(job.date, "DD MMM, YYYY").format("DD MMM YYYY")}
+                  {job.date
+                    ? moment(job.date).isValid()
+                      ? moment(job.date).format("DD MMM YYYY")
+                      : "Invalid date"
+                    : "—"}
                 </td>
                 <td className="px-4 py-4">
                   <span

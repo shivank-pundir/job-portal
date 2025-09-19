@@ -4,6 +4,7 @@ import JobApplication from "../models/jobApplication.js";
 import User from "../models/user.js";
 import Job from "../models/job.js";
 import { v2 as cloudinary } from "cloudinary";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 
 // Get User data
 export const getUserData = async (req, res) => {
@@ -26,97 +27,56 @@ export const getUserData = async (req, res) => {
   }
 };
 
-// Sync user from Clerk
+
+
 export const syncUserFromClerk = async (req, res) => {
   try {
-    console.log('🔄 syncUserFromClerk called');
-    
-    // Get the authorization header
+    console.log("🔄 syncUserFromClerk called");
+
+    // Get token from headers
     const authHeader = req.headers.authorization;
-    console.log('📥 Auth header:', authHeader);
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('❌ No valid authorization header');
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ success: false, message: "No valid token provided" });
     }
-    
-    // Extract the token
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    console.log(' Token extracted:', token.substring(0, 50) + '...');
-    
-    try {
-      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-      const userId = tokenPayload.sub; // 'sub' contains the user ID
-      console.log(' Extracted user ID from token:', userId);
-      console.log('📋 Full token payload:', tokenPayload);
-      
-      // Extract name from token
-      let name = 'Anonymous';
-      if (tokenPayload.first_name && tokenPayload.last_name) {
-        name = `${tokenPayload.first_name} ${tokenPayload.last_name}`.trim();
-      } else if (tokenPayload.first_name) {
-        name = tokenPayload.first_name;
-      } else if (tokenPayload.last_name) {
-        name = tokenPayload.last_name;
-      } else if (tokenPayload.name) {
-        name = tokenPayload.name;
-      }
-      
-      // Ensure name is not null or undefined
-      if (!name || name === 'null' || name === 'undefined') {
-        name = 'Anonymous';
-      }
-      
-      console.log('📝 Extracted data:', { id: userId, email: tokenPayload.email, name });
-      
-      // Check if user exists in MongoDB
-      let user = await User.findOne({ _id: userId });
-      
-      if (!user) {
-        console.log('❌ User not found, creating new user...');
-        // Create new user with data from token
-        user = await User.create({
-          _id: userId,
-          email: tokenPayload.email || 'no-email@example.com',
-          name: name,
-          image: tokenPayload.image_url || '',
-          resume: ''
-        });
-        console.log('✅ New user created:', user);
-      } else {
-        console.log('✅ User found, checking for updates...');
-        
-        // Update existing user with missing fields
-        if (!user.image || !user.resume || !user.name || user.name === 'Anonymous') {
-          user.email = user.email || tokenPayload.email || 'no-email@example.com';
-          user.name = name;
-          user.image = user.image || tokenPayload.image_url || '';
-          user.resume = user.resume || '';
-          await user.save();
-          console.log('✅ User updated with missing fields:', user);
-        } else {
-          console.log('✅ User is up to date');
-        }
-      }
 
-      console.log('✅ Returning user data:', user);
-      res.json({ success: true, user });
-    } catch (tokenError) {
-      console.error('❌ Token decoding error:', tokenError);
-      return res.status(401).json({ success: false, message: "Invalid token" });
-    }
-    
+    const token = authHeader.substring(7); // remove Bearer prefix
+    const tokenPayload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
+    const userId = tokenPayload.sub;
+
+    // ✅ Always fetch fresh user data from Clerk
+    const clerkUser = await clerkClient.users.getUser(userId);
+
+    let fullName = (clerkUser.firstName || "") + " " + (clerkUser.lastName || "");
+    fullName = fullName.trim() || "Anonymous";
+
+    // ✅ Upsert user in MongoDB
+    const user = await User.findOneAndUpdate(
+      { _id: clerkUser.id }, // use Clerk ID as _id
+      {
+        email: clerkUser.emailAddresses[0]?.emailAddress || "no-email@example.com",
+        name: fullName,
+        image: clerkUser.imageUrl || "",
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log("✅ Synced user:", user);
+    res.json({ success: true, user });
   } catch (error) {
     console.error("❌ syncUserFromClerk error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Apply for a job
+
+// applyForJob.js
 export const applyForJob = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    console.log("api call");
+    const { userId } = req.auth;
     const { jobId } = req.body;
+    console.log("Creating application:", { userId, jobId });
+
 
     if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
     if (!jobId) return res.status(400).json({ success: false, message: "jobId is required" });
@@ -124,14 +84,19 @@ export const applyForJob = async (req, res) => {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ success: false, message: "Job not found" });
 
-    const existingApplication = await JobApplication.findOne({ userId, jobId });
+    // ✅ Ensure both fields are checked
+    const existingApplication = await JobApplication.findOne({
+      userId: userId.toString(),
+      jobId: jobId.toString(),
+    });
+
     if (existingApplication) {
-      return res.status(400).json({ success: false, message: "Already applied" });
+      return res.status(400).json({ success: false, message: "Already applied to this job" });
     }
 
     await JobApplication.create({
-      userId,
-      jobId,
+      userId: userId.toString(),
+      jobId: jobId.toString(),
       companyId: job.companyId,
       status: "pending",
       date: Date.now(),
@@ -143,10 +108,13 @@ export const applyForJob = async (req, res) => {
   }
 };
 
+
+
 // Get user job applications
 export const getUserJobApplication = async (req, res) => {
   try {
     const { userId } = req.auth();
+    console.log(userId);
 
     if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
 

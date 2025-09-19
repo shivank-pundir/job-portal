@@ -11,6 +11,7 @@ const AddJob = () => {
   const [category, setCategory] = useState('Programming');
   const [level, setLevel] = useState('Beginner level');
   const [salary, setSalary] = useState(0);
+  const [loading, setLoading] = useState(false); // ✅ Loading state
 
   const { backendUrl, companyToken } = useContext(AppContext);
 
@@ -34,6 +35,7 @@ const AddJob = () => {
     }
 
     try {
+      setLoading(true); // start loading
       const description = quillRef.current.root.innerHTML;
 
       const { data } = await axios.post(
@@ -57,6 +59,8 @@ const AddJob = () => {
       }
     } catch (error) {
       toast.error(error?.response?.data?.message || error.message || "Something went wrong");
+    } finally {
+      setLoading(false); // stop loading
     }
   };
 
@@ -130,11 +134,20 @@ const AddJob = () => {
           />
         </div>
 
-        <button type="submit" className='borer mt-2 border-white bg-black text-white rounded px-3 py-3 w-28'>Add</button>
+        <button
+          type="submit"
+          className='border mt-2 border-white bg-black text-white rounded px-3 py-3 w-28 flex justify-center items-center'
+          disabled={loading} // ✅ disable button while loading
+        >
+          {loading ? (
+            <div className="animate-spin h-5 w-5 border-b-2 border-white rounded-full"></div>
+          ) : (
+            'Add'
+          )}
+        </button>
       </form>
     </div>
   );
 };
 
 export default AddJob;
- 

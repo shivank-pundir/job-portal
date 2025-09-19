@@ -90,6 +90,29 @@ export const AppContextProvider = (props) => {
     }
   };
 
+  //fetch userApplication user applied
+
+  const fetchUserApplication = async() => {
+
+    try {
+        const token = await getToken();
+
+    const {data} = await axios.get(`${backendUrl}/api/users/applications`,
+      {headers: {Authorization : `Bearer ${token}`}}
+    )
+    if(data.success){
+      console.log("data", data);
+      setUserDataApplications(data.applications);
+    }else{
+      toast.error(data.message);
+    }
+      
+    } catch (error) {
+      toast.error(error.message);
+    }
+  
+  }
+
   // On first load
   useEffect(() => {
     fetchJobs();
@@ -118,6 +141,8 @@ export const AppContextProvider = (props) => {
   useEffect(() => {
     if (user) {
       fetchUserData();
+      fetchUserApplication();
+      
     } else {
       setUserData(null);
     }
@@ -141,7 +166,7 @@ export const AppContextProvider = (props) => {
     setUserData,
     userDataApplications,
     setUserDataApplications,
-    fetchUserData
+    fetchUserData, fetchUserApplication
     
   };
 

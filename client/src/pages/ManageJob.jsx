@@ -4,63 +4,75 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { AppContext } from '../context/AppContext';
-import { jobsData as dummyJobs, manageJobsData } from '../assets/assets';
+import { jobsData as dummyJobs } from '../assets/assets';
 
 const ManageJob = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState([]);       // ✅ always array
+  const [loading, setLoading] = useState(true); // ✅ loading state
   const { backendUrl, companyToken } = useContext(AppContext);
 
   const fetchData = async () => {
     try {
+      setLoading(true); // start loading
       const { data } = await axios.get(`${backendUrl}/api/company/list-job`, {
         headers: { Authorization: `Bearer ${companyToken}` },
       });
 
-     
-
-     if (data.success && Array.isArray(data.jobsData)) {
-  if (data.jobsData.length > 0) {
-    setJobs([...data.jobsData].reverse());
-    console.table(data.jobsData); // ✅ correct
-  } else {
-    toast.info("No jobs found for this company");
-  }
-} else {
-  toast.error("Invalid jobs data received");
-}
-
+      if (data.success && Array.isArray(data.jobsData)) {
+        if (data.jobsData.length > 0) {
+          setJobs([...data.jobsData].reverse());
+        } else {
+          toast.info("No jobs found for this company");
+          setJobs([]);
+        }
+      } else {
+        toast.error("Invalid jobs data received");
+        setJobs([]);
+      }
     } catch (error) {
       toast.error(error.message);
       setJobs(dummyJobs);
+    } finally {
+      setLoading(false); // stop loading
     }
   };
 
-  //function to change the visibility
-  const changeVisibility = async(id) => {
+  const changeVisibility = async (id) => {
     try {
-      const {data} = await axios.post(`${backendUrl}/api/company/change-visibility`, {
-        id
-      }, {
-        headers: { Authorization: `Bearer ${companyToken}` },
-      })
-      
-      if(data.success){
-        toast.success(data.message)
-        fetchData()
-      }else{
-        toast.error(data.message)
+      setLoading(true);
+      const { data } = await axios.post(
+        `${backendUrl}/api/company/change-visibility`,
+        { id },
+        { headers: { Authorization: `Bearer ${companyToken}` } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        fetchData();
+      } else {
+        toast.error(data.message);
       }
     } catch (error) {
-       toast.error(error.message)
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (companyToken) {
       fetchData();
     }
   }, [companyToken]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container p-4 max-w-5xl">
@@ -86,17 +98,16 @@ const ManageJob = () => {
                 </td>
                 <td className="px-4 py-2 max-sm:hidden">{job.location}</td>
                 <td className="px-4 py-2 text-center">
-                  {job.applicants ? job.applicants.length : 0}
+                  {job.applicants || 0}
                 </td>
-               <td className="px-4 py-2 text-center">
-  <input
-    type="checkbox"
-    className="scale-125"
-    checked={job.visible}   // bind to state/DB value
-    onChange={() => changeVisibility(job._id)}
-  />
-</td>
-
+                <td className="px-4 py-2 text-center">
+                  <input
+                    type="checkbox"
+                    className="scale-125"
+                    checked={job.visible}
+                    onChange={() => changeVisibility(job._id)}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>
