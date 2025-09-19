@@ -1,13 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { assets } from '../assets/assets';
-import { AppContext } from '../context/AppContext';
+import { AppContext } from '../context/AppContext.jsx';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const ViewApplication = () => {
   const { backendUrl, companyToken } = useContext(AppContext);
   const [applicants, setApplicants] = useState([]);
-  const [loading, setLoading] = useState(true); // ✅ loading state
+  const [loading, setLoading] = useState(true); 
 
   // Fetch company job applicants data
   const fetchCompanyJobApplicants = async () => {

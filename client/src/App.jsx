@@ -1,14 +1,14 @@
 import React, { useContext } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import ApplyJobs from './pages/ApplyJobs';
-import Applications from './pages/Applications';
-import RecuiterLogin from './components/RecuiterLogin';
-import { AppContext } from './context/AppContext';
-import Dashboard from './pages/Dashbord';
-import AddJob from './pages/AddJob';
-import ViewApplication from './pages/ViewApplication';
-import ManageJob from './pages/ManageJob';
+import Home from './pages/Home.jsx';
+import ApplyJobs from './pages/ApplyJobs.jsx';
+import Applications from './pages/Applications.jsx';
+import RecuiterLogin from './components/RecuiterLogin.jsx';
+import { AppContext } from './context/AppContext.jsx';
+import Dashboard from './pages/Dashbord.jsx';
+import AddJob from './pages/AddJob.jsx';
+import ViewApplication from './pages/ViewApplication.jsx';
+import ManageJob from './pages/ManageJob.jsx';
 import 'quill/dist/quill.snow.css'
 import { ToastContainer, toast } from 'react-toastify';
 // import UserDebug from './components/UserDebug'; // Comment out this import

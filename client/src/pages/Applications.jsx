@@ -1,9 +1,9 @@
 import React, { useContext, useState } from "react";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/Navbar.jsx";
 import { assets, jobsApplied } from "../assets/assets";
 import moment from "moment";
-import Footer from "../components/Footer";
-import { AppContext } from "../context/AppContext";
+import Footer from "../components/Footer.jsx";
+import { AppContext } from "../context/AppContext.jsx";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
 import axios from "axios";

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { AppContext } from '../context/AppContext';
+import { AppContext } from '../context/AppContex.jsxt';
 import { useUser } from '@clerk/clerk-react';
 
 const UserDebug = () => {

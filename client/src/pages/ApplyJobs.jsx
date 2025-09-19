@@ -1,14 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import Navbar from "../components/Navbar";
-import Loading from "../components/Loading";
+import Navbar from "../components/Navbar.jsx";
+import Loading from "../components/Loading.jsx";
 import { assets } from "../assets/assets";
 import kconvert from "k-convert";
 import moment from "moment";
-import JobCard from "../components/JobCard";
-import Footer from "../components/Footer";
-import { AppContext } from "../context/AppContext";
+import JobCard from "../components/JobCard.jsx";
+import Footer from "../components/Footer.jsx";
+import { AppContext } from "../context/AppContext.jsx";
 import { toast } from "react-toastify";
 import { useAuth } from "@clerk/clerk-react";
 
