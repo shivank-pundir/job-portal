@@ -91,7 +91,7 @@ npm run dev
 
 Frontend: Vercel / Netlify
 
-Backend: Render / Railway / Heroku
+Backend:  Netlify
 
 Database: MongoDB Atlas
 
